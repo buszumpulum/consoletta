@@ -1,7 +1,7 @@
-#include <SPI.h> // biblioteka do komunikacji z nokiaLCD
-#include "nokiaLCD.h" // biblioteka do obslugi wyswietlacza
-#include "consoletta.h" // biblioteka do obslugi przyciskow i joysticka
-#include "images.h" // plik z obrazami
+#include <SPI.h> // communication with NokiaLCD through SPI
+#include "nokiaLCD.h" // nokiaLCD library
+#include "consoletta.h" // Consoletta library
+#include "images.h" // images
 
 #define ENTRIES 2 // liczba pozycji menu
 #define PONG  0 // id ponga
@@ -148,7 +148,7 @@ void pong()
       
       if(ball_x > 8199||ball_x < 200)
       {//trafienie gracza 1
-        if(ball+x > 8199)
+        if(ball_x > 8199)
           p1_result++;//zwiekszenie wyniku
         else
           p2_result++;
@@ -240,12 +240,54 @@ void pong()
   }
 }
 
+#define drawSquare(x,y,sizE,filled,bw) setRect(x, y, x+sizE, y+sizE, filled, bw)
+#define drawRect(x,y,sizx,sizy,filled,bw) setRect(x, y, x+sizx, y+sizy, filled, bw)
+
+void diagnostic()
+{
+  clearDisplay(false);
+  
+  setStr("DIAG",60,0,BLACK);
+  
+  setRect(20, 5, 25, 42, false, BLACK);
+  setRect(4, 20, 41, 25, false, BLACK);
+  
+  drawSquare(49, 16, 6, false, BLACK);//MENU
+  drawSquare(60, 16, 6, false, BLACK);//PAUSE
+  
+  drawSquare(65, 25, 6, false, BLACK);//UP
+  drawSquare(58, 32, 6, false, BLACK);//LEFT
+  drawSquare(65, 39, 6, false, BLACK);//DOWN
+  drawSquare(72, 32, 6, false, BLACK);//RIGHT
+  
+  updateDisplay();
+  while(1)
+  {
+    read_function_buttons();
+    read_special_buttons();
+    read_joy_axes();
+    
+    drawSquare(50, 17, 4, true, on_button(B_MENU));
+    drawSquare(61, 17, 4, true, on_button(B_PAUSE));
+    
+    drawSquare(66, 26, 4, true, on_button(B_UP));
+    drawSquare(59, 33, 4, true, on_button(B_LEFT));
+    drawSquare(66, 40, 4, true, on_button(B_DOWN));
+    drawSquare(73, 33, 4, true, on_button(B_RIGHT));
+    
+    //drawSquare(21,21,3,true, on_button(B_JOY));
+    
+    updateDisplay();
+  }
+}
+
 void setup()
 {
   init_buttons();
   init_joy();
   lcdBegin();
   setContrast(60);
+  diagnostic();
   intro();
   delay(500);
   backlightAnimate(0, 255, 1000);

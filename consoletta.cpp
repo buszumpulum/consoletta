@@ -19,6 +19,51 @@ long last_debounce[7];
 int joy_state[2];
 int joy_centre[2];
 
+void register_interrupt(byte pin)
+{
+  *digitalPinToPCMSK(pin) |= bit(digitalPinToPCMSKbit(pin));
+  PCIFR |= bit(digitalPinToPCICRbit(pin));
+  PCICR |= bit(digitalPinToPCICRbit(pin));
+}
+
+void initButton(const int button)
+{
+  pinMode(button, INPUT);
+  register_interrupt((byte)button);
+}
+
+ISR(PCINT0_vect) // D8 - D13
+{
+  bt_before[B_MENU]=bt_state[B_MENU];
+  bt_state[B_MENU]=digitalRead(P_B_MENU);
+  
+  bt_before[B_RIGHT]=bt_state[B_RIGHT];
+  bt_state[B_RIGHT]=digitalRead(P_B_RIGHT);
+}
+
+ISR(PCINT1_vect) // A0 - A5
+{
+  
+}
+
+ISR(PCINT2_vect) // D0 - D7
+{
+  bt_before[B_JOY]=bt_state[B_JOY];
+  bt_state[B_JOY]=digitalRead(P_B_JOY);
+  
+  bt_before[B_PAUSE]=bt_state[B_PAUSE];
+  bt_state[B_PAUSE]=digitalRead(P_B_PAUSE);
+  
+  bt_before[B_DOWN]=bt_state[B_DOWN];
+  bt_state[B_DOWN]=digitalRead(P_B_DOWN);
+  
+  bt_before[B_UP]=bt_state[B_UP];
+  bt_state[B_UP]=digitalRead(P_B_UP);
+  
+  bt_before[B_LEFT]=bt_state[B_LEFT];
+  bt_state[B_LEFT]=digitalRead(P_B_LEFT);
+}
+
 void read_button(const int button_port, const int id) 
 {
   int reading = digitalRead(button_port);
@@ -41,20 +86,25 @@ void read_button(const int button_port, const int id)
 
 void init_buttons()
 {
-  pinMode(P_B_MENU, INPUT);
-  pinMode(P_B_PAUSE, INPUT);
-  pinMode(P_B_UP, INPUT);
-  pinMode(P_B_DOWN, INPUT);
-  pinMode(P_B_LEFT, INPUT);
-  pinMode(P_B_RIGHT, INPUT);
-  pinMode(P_B_JOY, INPUT);
+  //pinMode(P_B_MENU, INPUT);
+  initButton(P_B_MENU);
+  //pinMode(P_B_PAUSE, INPUT);
+  initButton(P_B_PAUSE);
+  //pinMode(P_B_UP, INPUT);
+  initButton(P_B_UP);
+  //pinMode(P_B_DOWN, INPUT);
+  initButton(P_B_DOWN);
+  //pinMode(P_B_LEFT, INPUT);
+  initButton(P_B_LEFT);
+  //pinMode(P_B_RIGHT, INPUT);
+  initButton(P_B_RIGHT);
+  //pinMode(P_B_JOY, INPUT);
+  initButton(P_B_JOY);
   int i;
   for(i=0;i<7;i++)
   {
-    bt_last_state[i]=LOW;
     bt_state[i]=LOW;
     bt_before[i]=LOW;
-    last_debounce[i]=millis();
   }
 }
 
@@ -92,27 +142,26 @@ void init_joy()
 
 void read_function_buttons()
 {
-  read_button(P_B_UP, B_UP);
-  read_button(P_B_DOWN, B_DOWN);
-  read_button(P_B_LEFT, B_LEFT);
-  read_button(P_B_RIGHT, B_RIGHT);
-  read_button(P_B_JOY, B_JOY);
+  
 }
 
 void read_special_buttons()
 {
-  read_button(P_B_MENU, B_MENU);
-  read_button(P_B_PAUSE, B_PAUSE);
+    
 }
 
 boolean button_activated(int btn)
 {
-  return bt_before[btn]==LOW && bt_state[btn]==HIGH;
+  boolean ret = bt_before[btn]==LOW && bt_state[btn]==HIGH;
+  bt_before[btn]=bt_state[btn];
+  return ret;
 }
 
 boolean button_deactivated(int btn)
 {
-  return bt_before[btn]==HIGH && bt_state[btn]==LOW;
+  boolean ret = bt_before[btn]==HIGH && bt_state[btn]==LOW;
+  bt_before[btn]=bt_state[btn];
+  return ret;
 }
 
 boolean on_button(int btn)
@@ -123,4 +172,6 @@ int read_ax(int ax)
 {
   return joy_state[ax];
 }
+
+
 
